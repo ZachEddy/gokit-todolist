@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -22,10 +24,15 @@ func MakeHTTPHandler(svc Service, logger log.Logger) http.Handler {
 		httptransport.ServerErrorLogger(logger),
 		httptransport.ServerErrorEncoder(encodeError),
 	}
-
-	r.Methods("GET").Path("/create").Handler(httptransport.NewServer(
+	r.Methods("POST").Path("/tasks").Handler(httptransport.NewServer(
 		e.CreateTaskEndpoint,
 		DecodeCreateTaskRequest,
+		EncodeResponse,
+		options...,
+	))
+	r.Methods("GET").Path("/tasks/{id}").Handler(httptransport.NewServer(
+		e.GetTaskEndpoint,
+		DecodeGetTaskRequest,
 		EncodeResponse,
 		options...,
 	))
@@ -33,11 +40,30 @@ func MakeHTTPHandler(svc Service, logger log.Logger) http.Handler {
 }
 
 func DecodeCreateTaskRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	// decode json data from request body
 	var request CreateTaskRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&request.payload); err != nil {
 		return nil, err
 	}
 	return request, nil
+}
+
+func DecodeGetTaskRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	vars := mux.Vars(r)
+	// get raw id from json
+	stringID, ok := vars["id"]
+	if !ok {
+		return nil, ErrBadRouting
+	}
+	// convert to unsigned 64 bit
+	u64ID, err := strconv.ParseUint(stringID, 10, 32)
+	if err != nil {
+		msg := fmt.Sprintf("value '%s' is not a valid id", stringID)
+		return nil, errors.New(msg)
+	}
+	// convert to unsigned 32 bit
+	u32ID := uint(u64ID)
+	return GetTaskRequest{ID: u32ID}, nil
 }
 
 func EncodeResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
