@@ -10,7 +10,7 @@ alpine:
 	@GOOS=linux GOARCH=amd64 go build -o cmd/server/main cmd/server/main.go
 
 docker: alpine
-	@docker build -t $(IMG) .
+	@docker build -t $(IMG) --no-cache .
 	@docker tag $(IMG) $(LATEST)
 
 push:
