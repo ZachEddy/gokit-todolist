@@ -30,6 +30,12 @@ func MakeHTTPHandler(svc Service, logger log.Logger) http.Handler {
 		EncodeResponse,
 		options...,
 	))
+	r.Methods("GET").Path("/tasks").Handler(httptransport.NewServer(
+		e.ListTasksEndpoint,
+		DecodeListTasksRequest,
+		EncodeResponse,
+		options...,
+	))
 	r.Methods("GET").Path("/tasks/{id}").Handler(httptransport.NewServer(
 		e.GetTaskEndpoint,
 		DecodeGetTaskRequest,
@@ -46,6 +52,12 @@ func DecodeCreateTaskRequest(_ context.Context, r *http.Request) (interface{}, e
 		return nil, err
 	}
 	return request, nil
+}
+
+func DecodeListTasksRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	// decode json data from request body
+	// var request ListTasksRequest
+	return ListTasksRequest{}, nil
 }
 
 func DecodeGetTaskRequest(_ context.Context, r *http.Request) (interface{}, error) {

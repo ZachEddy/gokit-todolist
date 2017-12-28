@@ -19,7 +19,7 @@ type Service interface {
 	CreateTask(context.Context, TaskPayload) (*Task, error)
 	UpdateTask(context.Context, string) (string, error)
 	DeleteTask(context.Context, string) (string, error)
-	ListTasks(context.Context, string) (string, error)
+	ListTasks(context.Context) (*[]Task, error)
 	GetTask(context.Context, uint) (*Task, error)
 }
 
@@ -75,9 +75,14 @@ func (svc TodoListService) DeleteTask(ctx context.Context, str string) (string, 
 	return "nothing to see here", nil
 }
 
-func (svc TodoListService) ListTasks(ctx context.Context, str string) (string, error) {
-	fmt.Println("list tasks not implemented!")
-	return "nothing to see here", nil
+func (svc TodoListService) ListTasks(ctx context.Context) (*[]Task, error) {
+	tasks := make([]Task, 0)
+	query := svc.DB.Find(&tasks)
+	if errors := query.GetErrors(); len(errors) > 0 {
+		// return first error
+		return nil, errors[0]
+	}
+	return &tasks, nil
 }
 
 func (svc TodoListService) GetTask(ctx context.Context, id uint) (*Task, error) {

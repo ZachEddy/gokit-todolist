@@ -9,12 +9,14 @@ import (
 type Endpoints struct {
 	CreateTaskEndpoint endpoint.Endpoint
 	GetTaskEndpoint    endpoint.Endpoint
+	ListTasksEndpoint  endpoint.Endpoint
 }
 
 func MakeServerEndpoints(svc Service) Endpoints {
 	return Endpoints{
 		CreateTaskEndpoint: MakeCreateTaskEndpoint(svc),
 		GetTaskEndpoint:    MakeGetTaskEndpoint(svc),
+		ListTasksEndpoint:  MakeListTasksEndpoint(svc),
 	}
 }
 
@@ -25,6 +27,14 @@ type CreateTaskRequest struct {
 type CreateTaskResponse struct {
 	T   *Task  `json:"task,omitempty"`
 	Err string `json:"error,omitempty"`
+}
+
+type ListTasksRequest struct {
+}
+
+type ListTasksResponse struct {
+	T   *[]Task `json:"task_list,omitempty"`
+	Err string  `json:"error,omitempty"`
 }
 
 type GetTaskRequest struct {
@@ -44,6 +54,17 @@ func MakeCreateTaskEndpoint(svc Service) endpoint.Endpoint {
 			return CreateTaskResponse{task, err.Error()}, nil
 		}
 		return CreateTaskResponse{task, ""}, nil
+	}
+}
+
+func MakeListTasksEndpoint(svc Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		// req := request.(ListTasksRequest)
+		tasks, err := svc.ListTasks(ctx)
+		if err != nil {
+			return ListTasksResponse{tasks, err.Error()}, nil
+		}
+		return ListTasksResponse{tasks, ""}, nil
 	}
 }
 
